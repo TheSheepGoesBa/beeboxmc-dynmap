@@ -8,6 +8,10 @@ eclipse {
     }
 }
 
+repositories {
+    maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
+}
+
 dependencies {
     implementation project(path: ':DynmapCoreAPI', configuration: 'shadow')
     implementation 'javax.servlet:javax.servlet-api:3.1'
@@ -22,6 +26,7 @@ dependencies {
     implementation 'io.github.linktosriram:s3-lite-http-client-url-connection:0.2.0'
     implementation 'io.github.linktosriram:s3-lite-http-client-spi:0.2.0'
     implementation 'io.github.linktosriram:s3-lite-util:0.2.0'
+    compileOnly("io.papermc.paper:paper-api:1.19.3-R0.1-SNAPSHOT")
 }
 
 processResources {

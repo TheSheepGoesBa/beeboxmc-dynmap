@@ -159,6 +159,15 @@ public abstract class GenericMapChunkCache extends MapChunkCache {
 			}
 		}
 
+		@Override
+		public final int[] getBlockCoords() {
+			try {
+				return new int[]{snap.cx, snap.cz};
+			} catch (ArrayIndexOutOfBoundsException aioobx) {
+				return new int[]{0, 0};
+			}
+		}
+
 		private final BiomeMap getBiomeRel(int dx, int dz) {
 			int nx = x + dx;
 			int nz = z + dz;
