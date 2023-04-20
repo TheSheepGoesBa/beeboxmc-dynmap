@@ -26,7 +26,8 @@ dependencies {
     implementation 'io.github.linktosriram:s3-lite-http-client-url-connection:0.2.0'
     implementation 'io.github.linktosriram:s3-lite-http-client-spi:0.2.0'
     implementation 'io.github.linktosriram:s3-lite-util:0.2.0'
-    compileOnly("io.papermc.paper:paper-api:1.19.3-R0.1-SNAPSHOT")
+    implementation group: 'org.spigotmc', name: 'spigot-api', version:'1.19.4-R0.1-SNAPSHOT'
+    implementation group: 'org.spigotmc', name: 'spigot', version:'1.19.4-R0.1-SNAPSHOT'
 }
 
 processResources {
