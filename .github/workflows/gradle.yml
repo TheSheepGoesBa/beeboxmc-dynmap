@@ -26,5 +26,5 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    - name: Clean Build
-      run: ./gradlew clean build --no-daemon
+    - name: Build
+      run: ./gradlew setup build

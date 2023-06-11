@@ -3,7 +3,7 @@ package org.dynmap.bukkit.helper.v120;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeFog;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
 import org.dynmap.DynmapChunk;
 import org.dynmap.bukkit.helper.BukkitVersionHelper;
 import org.dynmap.bukkit.helper.BukkitWorld;
@@ -30,13 +30,13 @@ import java.util.function.Supplier;
 /**
  * Container for managing chunks - dependent upon using chunk snapshots, since rendering is off server thread
  */
-public class MapChunkCache119_4 extends GenericMapChunkCache {
+public class MapChunkCache120 extends GenericMapChunkCache {
     private static final AsyncChunkProvider120 provider = BukkitVersionHelper.helper.isUnsafeAsync() ? null : new AsyncChunkProvider120();
     private World w;
     /**
      * Construct empty cache
      */
-    public MapChunkCache119_4(GenericChunkCache cc) {
+    public MapChunkCache120(GenericChunkCache cc) {
         super(cc);
     }
 
@@ -53,7 +53,7 @@ public class MapChunkCache119_4 extends GenericMapChunkCache {
         CraftWorld cw = (CraftWorld) w;
         if (!cw.isChunkLoaded(chunk.x, chunk.z)) return null;
         Chunk c = cw.getHandle().getChunkIfLoaded(chunk.x, chunk.z);
-        if (c == null || !c.o) return null;    // c.loaded
+        if (c == null || !c.q) return null;    // c.loaded
         NBTTagCompound nbt = ChunkRegionLoader.a(cw.getHandle(), c);
         return nbt != null ? parseChunkFromNBT(new NBT.NBTCompound(nbt)) : null;
     }
@@ -85,7 +85,7 @@ public class MapChunkCache119_4 extends GenericMapChunkCache {
         ChunkCoordIntPair cc = new ChunkCoordIntPair(chunk.x, chunk.z);
         GenericChunk gc = null;
         try {	// BUGBUG - convert this all to asyn properly, since now native async
-            nbt = cw.getHandle().k().a.f(cc).join().get();	// playerChunkMap
+            nbt = cw.getHandle().k().a.e(cc).join().get();	// playerChunkMap
         } catch (CancellationException cx) {
         } catch (NoSuchElementException snex) {
         }
