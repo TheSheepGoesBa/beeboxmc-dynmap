@@ -1,5 +1,6 @@
+
 plugins {
-	id 'fabric-loom' version '1.1.10'
+	id 'fabric-loom' version '1.6.11'
 }
 
 archivesBaseName = "Dynmap"
@@ -11,6 +12,8 @@ eclipse {
         name = "Dynmap(Fabric-1.18.2)"
     }
 }
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(17) // Need this here so eclipse task generates correctly.
 
 configurations {
     shadow

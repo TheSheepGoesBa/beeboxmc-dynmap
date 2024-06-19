@@ -1,6 +1,7 @@
 package org.dynmap.hdmap;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -1272,7 +1273,17 @@ public class TexturePack {
             imgs[idx].width = img.getWidth();
             imgs[idx].height = img.getHeight();
             imgs[idx].argb = new int[imgs[idx].width * imgs[idx].height];
-            img.getRGB(0, 0, imgs[idx].width, imgs[idx].height, imgs[idx].argb, 0, imgs[idx].width);
+            if (img.getType() == BufferedImage.TYPE_BYTE_GRAY) {	// We don't want alpha correction, apparently
+            	float[] buffer = new float[imgs[idx].width * imgs[idx].height];
+    			img.getData().getPixels(0, 0, imgs[idx].width, imgs[idx].height, buffer);
+            	for (int i = 0; i < imgs[idx].argb.length; i++) {
+            		int v = (int) buffer[i];
+            		imgs[idx].argb[i] = 0xFF000000 | (v << 16) | (v << 8) | v;
+            	}
+            }
+            else {
+            	img.getRGB(0, 0, imgs[idx].width, imgs[idx].height, imgs[idx].argb, 0, imgs[idx].width);
+            }
             img.flush();
             imgs[idx].isLoaded = true;
         }
@@ -1823,7 +1834,7 @@ public class TexturePack {
         
         try {
             String line;
-            rdr = new LineNumberReader(new InputStreamReader(txtfile));
+            rdr = new LineNumberReader(new BufferedReader(new InputStreamReader(txtfile)));
             while((line = rdr.readLine()) != null) {
                 if(line.startsWith("#")) {
                 }
@@ -1922,7 +1933,7 @@ public class TexturePack {
         Map<DynmapBlockState, BitSet> bsprslt;
         try {
             String line;
-            rdr = new LineNumberReader(new InputStreamReader(txtfile));
+            rdr = new LineNumberReader(new BufferedReader(new InputStreamReader(txtfile)));
             while((line = rdr.readLine()) != null) {
                 boolean skip = false;
                 int lineNum = rdr.getLineNumber();
