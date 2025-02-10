@@ -2581,6 +2581,402 @@ public class TexturePack {
             }
         }
     }
+
+    public final void readColor(final HDPerspectiveState ps, final MapIterator mapiter, final Color rslt, final DynmapBlockState blk, final DynmapBlockState lastblocktype,
+                                final SlimeTexturePackHDShader.ShaderState ss) {
+        HDBlockStateTextureMap map = HDBlockStateTextureMap.getByBlockState(blk);
+        BlockStep laststep = ps.getLastBlockStep();
+        int patchid = ps.getTextureIndex();   /* See if patch index */
+        int textid;
+        int faceindex;
+        if(patchid >= 0) {
+            faceindex = patchid;
+        }
+        else {
+            faceindex = laststep.ordinal();
+        }
+        try {
+            textid = map.faces[faceindex];
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            textid = -1;
+        }
+        if (ctm != null) {
+            int mod = 0;
+            if(textid >= COLORMOD_MULT_INTERNAL) {
+                mod = (textid / COLORMOD_MULT_INTERNAL) * COLORMOD_MULT_INTERNAL;
+                textid -= mod;
+            }
+            textid = mod + ctm.mapTexture(mapiter, blk, laststep, textid, ss);
+        }
+        readColor(ps, mapiter, rslt, blk, lastblocktype, ss, map, laststep, patchid, textid, map.stdrotate);
+        if(map.layers != null) {    /* If layered */
+            /* While transparent and more layers */
+            while(rslt.isTransparent() && (map.layers[faceindex] >= 0)) {
+                faceindex = map.layers[faceindex];
+                textid = map.faces[faceindex];
+                readColor(ps, mapiter, rslt, blk, lastblocktype, ss, map, laststep, patchid, textid, map.stdrotate);
+            }
+        }
+    }
+
+    private final void readColor(final HDPerspectiveState ps, final MapIterator mapiter, final Color rslt, final DynmapBlockState blk, final DynmapBlockState lastblocktype,
+                                 final SlimeTexturePackHDShader.ShaderState ss, HDBlockStateTextureMap map, BlockStep laststep, int patchid, int textid, boolean stdrot) {
+        if(textid < 0) {
+            rslt.setTransparent();
+            return;
+        }
+        boolean hasblockcoloring = ss.do_biome_shading && this.blockColoring.hasBlkStateValue(blk);
+        // Test if we have no texture modifications
+        boolean simplemap = (textid < COLORMOD_MULT_INTERNAL) && (!hasblockcoloring);
+        int[] xyz = null;
+
+        if (simplemap) {    /* If simple mapping */
+            int[] texture = getTileARGB(textid);
+            /* Get texture coordinates (U=horizontal(left=0),V=vertical(top=0)) */
+            int u = 0, v = 0;
+            /* If not patch, compute U and V */
+            if(patchid < 0) {
+                xyz = ps.getSubblockCoord();
+
+                switch(laststep) {
+                    case X_MINUS: /* South face: U = East (Z-), V = Down (Y-) */
+                        u = native_scale-xyz[2]-1; v = native_scale-xyz[1]-1;
+                        break;
+                    case X_PLUS:    /* North face: U = West (Z+), V = Down (Y-) */
+                        u = xyz[2]; v = native_scale-xyz[1]-1;
+                        break;
+                    case Z_MINUS:   /* West face: U = South (X+), V = Down (Y-) */
+                        u = xyz[0]; v = native_scale-xyz[1]-1;
+                        break;
+                    case Z_PLUS:    /* East face: U = North (X-), V = Down (Y-) */
+                        u = native_scale-xyz[0]-1; v = native_scale-xyz[1]-1;
+                        break;
+                    case Y_MINUS:   /* U = East(Z-), V = South(X+) */
+                        if(stdrot) {
+                            u = xyz[0]; v = xyz[2];
+                        }
+                        else {
+                            u = native_scale-xyz[2]-1; v = xyz[0];
+                        }
+                        break;
+                    case Y_PLUS:
+                        if(stdrot) {
+                            u = native_scale-xyz[0]-1; v = xyz[2];
+                        }
+                        else {
+                            u = xyz[2]; v = xyz[0];
+                        }
+                        break;
+                }
+            }
+            else {
+                u = fastFloor(ps.getPatchU() * native_scale);
+                v = native_scale - fastFloor(ps.getPatchV() * native_scale) - 1;
+            }
+            /* Read color from texture */
+            try {
+                rslt.setARGB(texture[v*native_scale + u]);
+            } catch(ArrayIndexOutOfBoundsException aoobx) {
+                u = ((u < 0) ? 0 : ((u >= native_scale) ? (native_scale-1) : u));
+                v = ((v < 0) ? 0 : ((v >= native_scale) ? (native_scale-1) : v));
+                try {
+                    rslt.setARGB(texture[v*native_scale + u]);
+                } catch(ArrayIndexOutOfBoundsException oob2) { }
+            }
+
+            return;
+        }
+
+        /* See if not basic block texture */
+        int textop = textid / COLORMOD_MULT_INTERNAL;
+        textid = textid % COLORMOD_MULT_INTERNAL;
+
+        /* If clear-inside op, get out early */
+        if((textop == COLORMOD_CLEARINSIDE) || (textop == COLORMOD_MULTTONED_CLEARINSIDE)) {
+            DynmapBlockState lasthit = ss.getLastBlockHit(); // Last surface hit, vs last visited
+            /* Check if previous block is same block type as we are: surface is transparent if it is */
+            if (blk.matchingBaseState(lasthit) || ((blk.isWaterFilled() && lasthit.isWaterFilled()) && ps.isOnFace())) {
+                rslt.setTransparent();
+                return;
+            }
+            /* If water block, to watercolor tone op */
+            if (blk.isWater()) {
+                textop = COLORMOD_WATERTONED;
+            }
+            else if(textop == COLORMOD_MULTTONED_CLEARINSIDE) {
+                textop = COLORMOD_MULTTONED;
+            }
+        }
+
+        int[] texture = getTileARGB(textid);
+        /* Get texture coordinates (U=horizontal(left=0),V=vertical(top=0)) */
+        int u = 0, v = 0, tmp;
+
+        if(patchid < 0) {
+            if (xyz == null) xyz = ps.getSubblockCoord();
+            switch(laststep) {
+                case X_MINUS: /* South face: U = East (Z-), V = Down (Y-) */
+                    u = native_scale-xyz[2]-1; v = native_scale-xyz[1]-1;
+                    break;
+                case X_PLUS:    /* North face: U = West (Z+), V = Down (Y-) */
+                    u = xyz[2]; v = native_scale-xyz[1]-1;
+                    break;
+                case Z_MINUS:   /* West face: U = South (X+), V = Down (Y-) */
+                    u = xyz[0]; v = native_scale-xyz[1]-1;
+                    break;
+                case Z_PLUS:    /* East face: U = North (X-), V = Down (Y-) */
+                    u = native_scale-xyz[0]-1; v = native_scale-xyz[1]-1;
+                    break;
+                case Y_MINUS:   /* U = East(Z-), V = South(X+) */
+                    if(stdrot) {
+                        u = xyz[0]; v = xyz[2];
+                    }
+                    else {
+                        u = native_scale-xyz[2]-1; v = xyz[0];
+                    }
+                    break;
+                case Y_PLUS:
+                    if(stdrot) {
+                        u = native_scale-xyz[0]-1; v = xyz[2];
+                    }
+                    else {
+                        u = xyz[2]; v = xyz[0];
+                    }
+                    break;
+            }
+        }
+        else {
+            u = fastFloor(ps.getPatchU() * native_scale);
+            v = native_scale - fastFloor(ps.getPatchV() * native_scale) - 1;
+        }
+        /* Handle U-V transorms before fetching color */
+        switch(textop) {
+            case COLORMOD_ROT90:
+                tmp = u; u = native_scale - v - 1; v = tmp;
+                break;
+            case COLORMOD_ROT180:
+                u = native_scale - u - 1; v = native_scale - v - 1;
+                break;
+            case COLORMOD_ROT270:
+            case COLORMOD_GRASSTONED270:
+            case COLORMOD_FOLIAGETONED270:
+            case COLORMOD_WATERTONED270:
+                tmp = u; u = v; v = native_scale - tmp - 1;
+                break;
+            case COLORMOD_FLIPHORIZ:
+                u = native_scale - u - 1;
+                break;
+            case COLORMOD_SHIFTDOWNHALF:
+                if(v < native_scale/2) {
+                    rslt.setTransparent();
+                    return;
+                }
+                v -= native_scale/2;
+                break;
+            case COLORMOD_SHIFTDOWNHALFANDFLIPHORIZ:
+                if(v < native_scale/2) {
+                    rslt.setTransparent();
+                    return;
+                }
+                v -= native_scale/2;
+                u = native_scale - u - 1;
+                break;
+            case COLORMOD_INCLINEDTORCH:
+                if(v >= (3*native_scale/4)) {
+                    rslt.setTransparent();
+                    return;
+                }
+                v += native_scale/4;
+                if(u < native_scale/2) u = native_scale/2-1;
+                if(u > native_scale/2) u = native_scale/2;
+                break;
+            case COLORMOD_GRASSSIDE:
+                boolean do_grass_side = false;
+                boolean do_snow_side = false;
+                if(ss.do_better_grass) {
+                    mapiter.unstepPosition(laststep);
+                    if (mapiter.getBlockType().isSnow())
+                        do_snow_side = true;
+                    if (mapiter.getBlockTypeAt(BlockStep.Y_MINUS).isGrass())
+                        do_grass_side = true;
+                    mapiter.stepPosition(laststep);
+                }
+
+                /* Check if snow above block */
+                if(mapiter.getBlockTypeAt(BlockStep.Y_PLUS).isSnow()) {
+                    if(do_snow_side) {
+                        texture = getTileARGB(TILEINDEX_SNOW); /* Snow full side block */
+                        textid = TILEINDEX_SNOW;
+                    }
+                    else {
+                        texture = getTileARGB(TILEINDEX_SNOWSIDE); /* Snow block */
+                        textid = TILEINDEX_SNOWSIDE;
+                    }
+                    textop = 0;
+                }
+                else {  /* Else, check the grass color overlay */
+                    if(do_grass_side) {
+                        texture = getTileARGB(TILEINDEX_GRASS); /* Grass block */
+                        textid = TILEINDEX_GRASS;
+                        textop = COLORMOD_GRASSTONED;   /* Force grass toning */
+                    }
+                    else {
+                        int ovclr = getTileARGB(TILEINDEX_GRASSMASK)[v*native_scale+u];
+                        if((ovclr & 0xFF000000) != 0) { /* Hit? */
+                            texture = getTileARGB(TILEINDEX_GRASSMASK); /* Use it */
+                            textop = COLORMOD_GRASSTONED;   /* Force grass toning */
+                        }
+                    }
+                }
+                break;
+            case COLORMOD_LILYTONED:
+                /* Rotate texture based on lily orientation function (from renderBlockLilyPad in RenderBlocks.jara in MCP) */
+                long l1 = (long)(mapiter.getX() * 0x2fc20f) ^ (long)mapiter.getZ() * 0x6ebfff5L ^ (long)mapiter.getY();
+                l1 = l1 * l1 * 0x285b825L + l1 * 11L;
+                int orientation = (int)(l1 >> 16 & 3L);
+                switch(orientation) {
+                    case 0:
+                        tmp = u; u = native_scale - v - 1; v = tmp;
+                        break;
+                    case 1:
+                        u = native_scale - u - 1; v = native_scale - v - 1;
+                        break;
+                    case 2:
+                        tmp = u; u = v; v = native_scale - tmp - 1;
+                        break;
+                    case 3:
+                        break;
+                }
+                break;
+        }
+        /* Read color from texture */
+        try {
+            rslt.setARGB(texture[v*native_scale + u]);
+        } catch (ArrayIndexOutOfBoundsException aioobx) {
+            rslt.setARGB(0);
+        }
+
+        int clrmult = -1;
+        int clralpha = 0xFF000000;
+        int custclrmult = -1;
+        // If block has custom coloring
+        if (hasblockcoloring) {
+            Integer idx = this.blockColoring.getBlkStateValue(blk);
+            LoadedImage img = imgs[idx.intValue()];
+            if (img.argb != null) {
+                custclrmult = mapiter.getSmoothWaterColorMultiplier(img.argb);
+            }
+            else {
+                hasblockcoloring = false;
+            }
+        }
+        if (!hasblockcoloring) {
+            // Switch based on texture modifier
+            switch(textop) {
+                case COLORMOD_GRASSTONED:
+                case COLORMOD_GRASSTONED270:
+                    if(ss.do_biome_shading) {
+                        if(imgs[IMG_SWAMPGRASSCOLOR] != null)
+                            clrmult = mapiter.getSmoothColorMultiplier(imgs[IMG_GRASSCOLOR].argb, imgs[IMG_SWAMPGRASSCOLOR].argb);
+                        else
+                            clrmult = mapiter.getSmoothGrassColorMultiplier(imgs[IMG_GRASSCOLOR].argb);
+                    }
+                    else {
+                        clrmult = imgs[IMG_GRASSCOLOR].trivial_color;
+                    }
+                    break;
+                case COLORMOD_FOLIAGETONED:
+                case COLORMOD_FOLIAGETONED270:
+                    if(ss.do_biome_shading) {
+                        if(imgs[IMG_SWAMPFOLIAGECOLOR] != null)
+                            clrmult = mapiter.getSmoothColorMultiplier(imgs[IMG_FOLIAGECOLOR].argb, imgs[IMG_SWAMPFOLIAGECOLOR].argb);
+                        else
+                            clrmult = mapiter.getSmoothFoliageColorMultiplier(imgs[IMG_FOLIAGECOLOR].argb);
+                    }
+                    else {
+                        clrmult = imgs[IMG_FOLIAGECOLOR].trivial_color;
+                    }
+                    break;
+                case COLORMOD_FOLIAGEMULTTONED:
+                    if(ss.do_biome_shading) {
+                        if(imgs[IMG_SWAMPFOLIAGECOLOR] != null)
+                            clrmult = mapiter.getSmoothColorMultiplier(imgs[IMG_FOLIAGECOLOR].argb, imgs[IMG_SWAMPFOLIAGECOLOR].argb);
+                        else
+                            clrmult = mapiter.getSmoothFoliageColorMultiplier(imgs[IMG_FOLIAGECOLOR].argb);
+                    }
+                    else {
+                        clrmult = imgs[IMG_FOLIAGECOLOR].trivial_color;
+                    }
+                    if(map.custColorMult != null) {
+                        clrmult = ((clrmult & 0xFEFEFE) + map.custColorMult.getColorMultiplier(mapiter)) / 2;
+                    }
+                    else {
+                        clrmult = ((clrmult & 0xFEFEFE) + map.colorMult) / 2;
+                    }
+                    break;
+
+                case COLORMOD_WATERTONED:
+                case COLORMOD_WATERTONED270:
+                    if(imgs[IMG_WATERCOLORX] != null) {
+                        if(ss.do_biome_shading) {
+                            clrmult = mapiter.getSmoothWaterColorMultiplier(imgs[IMG_WATERCOLORX].argb);
+                        }
+                        else {
+                            clrmult = imgs[IMG_WATERCOLORX].trivial_color;
+                        }
+                    }
+                    else {
+                        if(ss.do_biome_shading) {
+                            clrmult = mapiter.getSmoothWaterColorMultiplier();
+                        }
+                    }
+                    break;
+                case COLORMOD_BIRCHTONED:
+                    if(ss.do_biome_shading) {
+                        if(imgs[IMG_BIRCHCOLOR] != null)
+                            clrmult = mapiter.getSmoothFoliageColorMultiplier(imgs[IMG_BIRCHCOLOR].argb);
+                        else
+                            clrmult = colorMultBirch;
+                    }
+                    else {
+                        clrmult = colorMultBirch;
+                    }
+                    break;
+                case COLORMOD_PINETONED:
+                    if(ss.do_biome_shading) {
+                        if(imgs[IMG_PINECOLOR] != null)
+                            clrmult = mapiter.getSmoothFoliageColorMultiplier(imgs[IMG_PINECOLOR].argb);
+                        else
+                            clrmult = colorMultPine;
+                    }
+                    else {
+                        clrmult = colorMultPine;
+                    }
+                    break;
+                case COLORMOD_LILYTONED:
+                    clrmult = colorMultLily;
+                    break;
+                case COLORMOD_MULTTONED:    /* Use color multiplier */
+                    if(map.custColorMult != null) {
+                        clrmult = map.custColorMult.getColorMultiplier(mapiter);
+                    }
+                    else {
+                        clrmult = map.colorMult;
+                    }
+                    if((clrmult & 0xFF000000) != 0) {
+                        clralpha = clrmult & 0xFF000000;
+                    }
+                    break;
+            }
+        }
+
+        if((clrmult != -1) && (clrmult != 0)) {
+            rslt.blendColor(clrmult | clralpha);
+        }
+        if (hasblockcoloring && (custclrmult != -1)) {
+            rslt.blendColor(custclrmult | clralpha);
+        }
+    }
     
     /**
      * Read color for given subblock coordinate, with given block id and data and face

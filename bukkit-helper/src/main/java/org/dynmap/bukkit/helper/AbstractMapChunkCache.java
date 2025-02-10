@@ -274,6 +274,14 @@ public abstract class AbstractMapChunkCache extends MapChunkCache {
                 return BiomeMap.NULL;
             }
         }
+
+        public final int[] getBlockCoords() {
+            try {
+                return new int[]{this.bx, this.y, this.bz};
+            } catch (ArrayIndexOutOfBoundsException var2) {
+                return new int[]{0, 0, 0};
+            }
+        }
         @Override
         public final int getSmoothGrassColorMultiplier(int[] colormap) {
             int mult = 0xFFFFFF;

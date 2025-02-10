@@ -136,4 +136,6 @@ public interface MapIterator extends MapDataContext {
      * Get chunk status
      */
     default String getChunkStatus() { return null; }
+
+    int[] getBlockCoords();
 }
