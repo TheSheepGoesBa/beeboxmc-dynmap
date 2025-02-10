@@ -258,7 +258,7 @@ public class AWSS3MapStorage extends MapStorage {
         String region_endpoint = core.configuration.getString("storage/override_endpoint", "");
 
         if (region_endpoint.length() > 0) {
-            region = Region.of(region_name, URI.create(region_endpoint));
+//            region = Region.of(region_name, URI.create(region_endpoint));
         } else {
             region = Region.fromString(region_name);
         }

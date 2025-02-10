@@ -17,3 +17,9 @@ dependencies {
     exclude group: "com.mojang", module: "jtracy"
   }
 }
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
