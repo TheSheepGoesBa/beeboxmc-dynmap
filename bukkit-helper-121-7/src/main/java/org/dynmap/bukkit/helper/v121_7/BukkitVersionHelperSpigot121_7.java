@@ -1,9 +1,9 @@
 package org.dynmap.bukkit.helper.v121_7;
 
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_21_R4.CraftChunk;
-import org.bukkit.craftbukkit.v1_21_R4.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R4.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R5.CraftChunk;
+import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R5.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.dynmap.DynmapChunk;
 import org.dynmap.Log;
@@ -63,14 +63,14 @@ import java.util.Map;
 /**
  * Helper for isolation of bukkit version specific issues
  */
-public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
+public class BukkitVersionHelperSpigot121_7 extends BukkitVersionHelper {
 
 	@Override
 	public boolean isUnsafeAsync() {
 		return false;
 	}
 
-	 /**
+	/**
 	 * Get block short name list
 	 */
 	@Override
@@ -101,7 +101,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 
 	private static IRegistry<BiomeBase> getBiomeReg() {
 		if (reg == null) {
-			reg = MinecraftServer.getServer().ba().f(Registries.aG); // MinecraftServer.registryAccess().lookupOrThrow(Registries.BIOME)
+			reg = MinecraftServer.getServer().ba().f(Registries.aK);
 		}
 		return reg;
 	}
@@ -132,9 +132,9 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 	public int getBiomeBaseID(Object bb) {
 		return getBiomeReg().a((BiomeBase)bb);
 	}
-	
+
 	public static IdentityHashMap<IBlockData, DynmapBlockState> dataToState;
-	
+
 	/**
 	 * Initialize block states (org.dynmap.blockstate.DynmapBlockState)
 	 */
@@ -146,7 +146,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 		Block baseb = null;
 		Iterator<IBlockData> iter = bsids.iterator();
 		ArrayList<String> names = new ArrayList<String>();
-		
+
 		// Loop through block data states
 		DynmapBlockState.Builder bld = new DynmapBlockState.Builder();
 		while (iter.hasNext()) {
@@ -181,7 +181,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 				//Log.info("statename=" + bname + "[" + sb + "] = waterlogged");
 			}
 			DynmapBlockState dbs = bld.build(); // Build state
-			
+
 			dataToState.put(bd,  dbs);
 			lastBlockState.put(bname, (lastbs == null) ? dbs : lastbs);
 			Log.verboseinfo("blk=" + bname + ", idx=" + idx + ", state=" + sb + ", waterlogged=" + dbs.isWaterlogged());
@@ -195,11 +195,11 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 	 */
 	@Override
 	public MapChunkCache getChunkCache(BukkitWorld dw, List<DynmapChunk> chunks) {
-		MapChunkCache121_5 c = new MapChunkCache121_5(gencache);
+		MapChunkCache121_7 c = new MapChunkCache121_7(gencache);
 		c.setChunks(dw, chunks);
 		return c;
 	}
-	
+
 	/**
 	 * Get biome base water multiplier
 	 */
@@ -226,7 +226,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 		}
 		return humidity;
 	}
-	
+
 	@Override
 	public Polygon getWorldBorder(World world) {
 		Polygon p = null;
@@ -251,7 +251,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 			p.sendTitle(title, subtitle, fadeInTicks, stayTicks, fadeOutTIcks);
 		}
 	}
-	
+
 	/**
 	 * Get material map by block ID
 	 */
@@ -261,7 +261,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 	}
 
 	@Override
-	public void unloadChunkNoSave(World w, org.bukkit.Chunk c, int cx, int cz) {
+	public void unloadChunkNoSave(World w, Chunk c, int cx, int cz) {
 		Log.severe("unloadChunkNoSave not implemented");
 	}
 
@@ -332,26 +332,26 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 	@Override
 	public int getTileEntityX(Object te) {
 		TileEntity tileent = (TileEntity) te;
-		return tileent.ax_().u(); // TileEntity.getBlockPos ; Vec3i.getX
+		return tileent.aA_().u(); // TileEntity.getBlockPos ; Vec3i.getX
 	}
 
 	@Override
 	public int getTileEntityY(Object te) {
 		TileEntity tileent = (TileEntity) te;
-		return tileent.ax_().v(); // TileEntity.getBlockPos ; Vec3i.getY
+		return tileent.aA_().v(); // TileEntity.getBlockPos ; Vec3i.getY
 	}
 
 	@Override
 	public int getTileEntityZ(Object te) {
 		TileEntity tileent = (TileEntity) te;
-		return tileent.ax_().w(); // TileEntity.getBlockPos ; Vec3i.getZ
+		return tileent.aA_().w(); // TileEntity.getBlockPos ; Vec3i.getZ
 	}
 
 	@Override
-	public Object readTileEntityNBT(Object te, org.bukkit.World w) {
+	public Object readTileEntityNBT(Object te, World w) {
 		TileEntity tileent = (TileEntity) te;
 		CraftWorld cw = (CraftWorld) w;
-		return tileent.e(cw.getHandle().J_()); // TileEntity.saveCustomOnly ; LevelReader.registryAccess
+		return tileent.a(cw.getHandle().K_()); // TileEntity.saveCustomOnly ; LevelReader.registryAccess
 	}
 
 	@Override
@@ -399,7 +399,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 	public double getHealth(Player p) {
 		return p.getHealth();
 	}
-	
+
 	private static final Gson gson = new GsonBuilder().create();
 
 	/**
@@ -433,7 +433,7 @@ public class BukkitVersionHelperSpigot121_5 extends BukkitVersionHelper {
 					}
 				}
 			}
-		}		
+		}
 		return url;
 	}
 	// Get minY for world

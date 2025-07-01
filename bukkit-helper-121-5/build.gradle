@@ -1,12 +1,24 @@
-eclipse {
-    project {
-        name = "Dynmap(Spigot-1.21.5)"
-    }
+//eclipse {
+//    project {
+//        name = "Dynmap(Spigot-1.21.5)"
+//    }
+//}
+plugins {
+  id 'java'
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
 }
 
 description = 'bukkit-helper-1.21.5'
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(17) // Need this here so eclipse task generates correctly.
+//sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = JavaLanguageVersion.of(21) // Need this here so eclipse task generates correctly.
+
+//sourceCompatibility = JavaVersion.VERSION_21
+//targetCompatibility = JavaVersion.VERSION_21
 
 dependencies {
   implementation project(':bukkit-helper')
