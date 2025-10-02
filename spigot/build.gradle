@@ -97,7 +97,10 @@ dependencies {
 //    implementation(project(':bukkit-helper-121-4')) {
 //        transitive = false
 //    }
-    implementation(project(':bukkit-helper-121-5')) {
+//    implementation(project(':bukkit-helper-121-5')) {
+//        transitive = false
+//    }
+    implementation(project(':bukkit-helper-121-6')) {
         transitive = false
     }
 }
@@ -143,7 +146,8 @@ shadowJar {
 //        include(dependency(':bukkit-helper-121'))
 //        include(dependency(':bukkit-helper-121-3'))
 //        include(dependency(':bukkit-helper-121-4'))
-        include(dependency(':bukkit-helper-121-5'))
+//        include(dependency(':bukkit-helper-121-5'))
+        include(dependency(':bukkit-helper-121-6'))
     }
     relocate('org.bstats', 'org.dynmap.bstats')
     destinationDirectory = file '../target'
