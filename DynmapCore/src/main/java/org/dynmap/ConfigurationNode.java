@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -52,7 +51,7 @@ public class ConfigurationNode implements Map<String, Object> {
             options.setPrettyFlow(true);
             options.setVersion(DumperOptions.Version.V1_1);
 
-            yaml = new Yaml(new SafeConstructor(new LoaderOptions()), new EmptyNullRepresenter(), options);
+            yaml = new Yaml(new SafeConstructor(), new EmptyNullRepresenter(), options);
         }
     }
 
@@ -431,7 +430,7 @@ public class ConfigurationNode implements Map<String, Object> {
     private class EmptyNullRepresenter extends Representer {
 
         public EmptyNullRepresenter() {
-            super(new DumperOptions());
+            super();
             this.nullRepresenter = new EmptyRepresentNull();
         }
 
